@@ -176,4 +176,32 @@ public class LambdaSuite {
 
     }
 
+    @FunctionalInterface
+    interface InterfaceEjercicio{
+        Consumer<Integer> suppliersToConsumer(Supplier<Integer> a,Supplier<Integer> b,Supplier<Integer> c);
+    }
+
+
+    @Test
+    public void pruebaEjercicio(){
+
+        InterfaceEjercicio i = (s1,s2,s3)-> {
+
+            Consumer<Integer> cEj = d -> {
+                Integer suma = s1.get()+s2.get()+s3.get()+d;
+                System.out.println("Consumer-->"+suma);
+            };
+            return cEj;
+        };
+
+        Supplier s1 = ()-> 1;
+        Supplier s2 = ()-> 2;
+        Supplier s3 = ()-> 3;
+
+        Consumer<Integer> consumer = i.suppliersToConsumer(s1,s2,s3);
+        consumer.accept(new Integer(9));
+    }
+
+
+
 }
