@@ -202,6 +202,9 @@ public class LambdaSuite {
         consumer.accept(new Integer(9));
     }
 
-
+    @FunctionalInterface
+    interface InterfaceEjercicio2{
+        Consumer<Integer> suppliersToConsumer(Supplier<Integer> a,Supplier<Integer> b,Supplier<Integer> c);
+    }
 
 }
