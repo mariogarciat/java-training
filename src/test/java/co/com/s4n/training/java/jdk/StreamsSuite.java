@@ -48,6 +48,20 @@ public class StreamsSuite {
     }
 
     @Test
+    public void findFirstToNone(){
+        List<String> list = new ArrayList<>();
+
+        Optional<String> first = list
+                .stream()
+                .findFirst();
+
+        assertTrue(!first.isPresent());
+        String res = first.orElseGet(()->"NONE");
+        assertEquals("NONE",res);
+
+    }
+
+    @Test
     public void testStreams3(){
         Optional<String> first = Stream.of("a1", "a2", "a3")
                 .findFirst();
