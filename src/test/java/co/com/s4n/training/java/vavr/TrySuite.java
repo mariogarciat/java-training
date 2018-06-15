@@ -1,5 +1,6 @@
 package co.com.s4n.training.java.vavr;
 
+import co.com.s4n.training.java.ExerciseTryClass;
 import io.vavr.CheckedFunction1;
 import io.vavr.CheckedFunction2;
 import io.vavr.Function1;
@@ -11,11 +12,13 @@ import static io.vavr.Patterns.*;
 import static junit.framework.TestCase.assertEquals;
 import io.vavr.PartialFunction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import java.util.List;
 import java.util.function.Consumer;
 import static io.vavr.control.Try.failure;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TrySuite {
@@ -33,8 +36,11 @@ public class TrySuite {
                 Success(3),
                 myTrySuccess);
 
+        assertNotEquals(3,myTrySuccess);
+
         assertTrue("failed - the values is a Failure",
                 myTryFailure.isFailure());
+
     }
 
     private String patternMyTry(Try<Integer> myTry) {
@@ -62,8 +68,8 @@ public class TrySuite {
     }
 
     private Try<Integer> recoverMyTry(Integer a, Integer b) {
-        return Try.of(() -> a / b).recover(x -> Match(x).of(
-                Case($(instanceOf(Exception.class)), -1)));
+        return Try.of(() -> a / b).recover(x -> Match(x).of(        //Si el prefijo a .recover es failure, ejecuta el sufijo
+                Case($(instanceOf(Exception.class)), -1)));     //recover devuelve success de -1
     }
 
     /**
@@ -117,6 +123,27 @@ public class TrySuite {
                 "5 example of text",
                 transform);
     }
+    @Test
+    public void testSuccessTransform2() {
+        Try<Integer> number = Try.of(() -> 5);
+        Try<Integer> transform = number.transform(self -> self);
+
+        assertEquals("Failure - it should transform the number to text",
+                Success(5),
+                transform);
+    }
+
+    @Test
+    public void testingMap(){
+        Try<String> str = Try.of(()->"Mario");
+        Try<Integer> size = str.map(x -> x.length());
+        assertEquals("Failure - it should transform the number to text",
+                Success(5),
+                size);
+    }
+
+
+
 
     /**
      * La funcionalidad transform va a generar error sobre un try con error.
@@ -330,6 +357,8 @@ public class TrySuite {
                 Try.failure(new ArithmeticException("/ by zero")).toString() ,
                 aTry2.toString());
     }
+
+
     /**
      *  El Recover retorna el valor a recuperar, pero sin Try, permitiendo que lance un Exception
      *  si, falla
@@ -355,6 +384,113 @@ public class TrySuite {
         };
         Try<Integer> aTry = Try.of(() -> 2).mapTry(checkedFunction1);
         assertEquals("Failed the checkedFuntion", Success(1),aTry);
+    }
+
+    public Try<Integer> sumar(Integer a, Integer b){
+        return Try.of(()->a+b);
+    }
+
+    public Try<Integer> dividir(Integer a, Integer b){
+        return Try.of(()->a/b);
+    }
+
+    public Try<Integer> dividirConRecuperacion(Integer a, Integer b){
+        return Try.of(()->a/b).recoverWith(Exception.class,Try.of(()->1));
+    }
+
+    @Test
+    public void testMonadicCompositionFlatmap(){
+        Try<Integer> res = sumar(1, 2)
+                .flatMap(r0 -> sumar(r0, r0)
+                .flatMap(r1 -> sumar(r1,-6)
+                .flatMap(r2 -> dividir(r2,r2))));
+
+        assertTrue(res.isFailure());
+    }
+
+    @Test
+    public void testMonadicCompositionFlatmapFor(){
+        Try<Integer> res =
+                For(sumar(1,2), r0 ->
+                        For(sumar(r0,r0), r1 ->
+                                For(sumar(r1,-6), r2 ->
+                                        dividir(r2,r2)))).toTry();
+        assertTrue(res.isFailure());
+    }
+
+    @Test
+    public void testMonadicCompositionFlatmapForRecover(){
+        Try<Integer> res =
+                For(sumar(1,2), r0 ->
+                        For(sumar(r0,r0), r1 ->
+                                For(sumar(r1,-6), r2 ->
+                                        dividir(r2,r2).recover(Exception.class, e -> 1)))).toTry();
+        assertEquals(res,Success(1));
+    }
+
+    @Test
+    public void testMonadicCompositionFlatmapForRecoverWith(){
+        Try<Integer> res =
+                For(sumar(1,2), r0 ->
+                        For(sumar(r0,r0), r1 ->
+                                For(sumar(r1,-6), r2 ->
+                                        dividirConRecuperacion(r2,r2)))).toTry();
+        assertEquals(res,Success(1));
+    }
+
+    @Test
+    public void testExerciseTry(){
+        Try<List> res = For(ExerciseTryClass.addSize("andrea"), s1 ->
+                For(ExerciseTryClass.concatString(s1, "mario"), s2 ->
+                        For(ExerciseTryClass.removeFromSize(s2), s3 ->
+                                ExerciseTryClass.stringToList(s3)))).toTry();
+
+        String[] arr = {"a","n","d","r","e","a","-","s"};
+        List<String> listTest = Arrays.asList(arr);
+
+        assertEquals(Success(listTest), res);
+    }
+
+    @Test
+    public void testExerciseTryFailure(){
+        Try<List> res = For(ExerciseTryClass.addSize("hoy"), s1 ->
+                For(ExerciseTryClass.concatString(s1, "mario"), s2 ->
+                        For(ExerciseTryClass.removeFromSize(s2), s3 ->
+                                ExerciseTryClass.stringToList(s3)))).toTry();
+
+
+        assertTrue(res.isFailure());
+    }
+
+    @Test
+    public void testExerciseTryFailureRecover(){
+
+        String str = "marcos";
+        Try<List> res = For(ExerciseTryClass.addSize("hoy").recover(Exception.class,e->str), s1 ->
+                For(ExerciseTryClass.concatString(s1, "mario"), s2 ->
+                        For(ExerciseTryClass.removeFromSize(s2), s3 ->
+                                ExerciseTryClass.stringToList(s3)))).toTry();
+
+
+        String[] arr = {"m","a","r","c","o","s"};
+        List<String> listTest = Arrays.asList(arr);
+        assertEquals(Success(listTest), res);
+    }
+
+    @Test
+    public void testExerciseTryFailureRecoverWith(){
+
+        String str = "marcos";
+        Try<List> res = For(ExerciseTryClass.addSize("hoy")
+                .recoverWith(Exception.class, Try.of(()->"jorge")), s1 ->
+                For(ExerciseTryClass.concatString(s1, "estefania"), s2 ->
+                        For(ExerciseTryClass.removeFromSize(s2), s3 ->
+                                ExerciseTryClass.stringToList(s3)))).toTry();
+
+
+        String[] arr = {"j","o","r","g","e"," ", "e"};
+        List<String> listTest = Arrays.asList(arr);
+        assertEquals(Success(listTest), res);
     }
 
 }
