@@ -64,9 +64,6 @@ public class ExerciseClass {
 
     public static Option<List> listFiltered(List<String> list){
         list = list.stream().filter(x -> x.contains("a")).collect(Collectors.toList());
-
-
-
         return Option.of(list);
     }
 

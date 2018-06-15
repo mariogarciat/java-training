@@ -350,11 +350,9 @@ public class OptionSuite {
         System.out.println("testExercise");
         Option<List> r1 = ExerciseClass.addSize("andrea")
                 .flatMap(s -> ExerciseClass.concatString(s,"mario"))
-                .flatMap(s1 -> ExerciseClass.removeFromSize(s1))
-                .flatMap(s2 -> ExerciseClass.stringToList(s2));
+                .flatMap(ExerciseClass::removeFromSize)
+                .flatMap(ExerciseClass::stringToList);
 
-        //Option<io.vavr.collection.List<String>> r2 = ExerciseClass.stringToList("hola");
-        //io.vavr.collection.List<String> list = io.vavr.collection.List.of("h","o","l","a");
         String[] arr = {"a","n","d","r","e","a","-","s"};
         List<String> listTest = Arrays.asList(arr);
         //assertEquals(r1.getOrElse("None"),"andrea-seis");
