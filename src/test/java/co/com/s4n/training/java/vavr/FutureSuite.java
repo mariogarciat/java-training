@@ -1,6 +1,7 @@
 package co.com.s4n.training.java.vavr;
 
 import io.vavr.Function1;
+import io.vavr.Lazy;
 import io.vavr.collection.List;
 import io.vavr.collection.Seq;
 import io.vavr.collection.Stream;
@@ -20,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import static io.vavr.Predicates.instanceOf;
 import static io.vavr.Patterns.*;
+import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -46,7 +48,7 @@ public class FutureSuite {
             if (++count > WAIT_COUNT) {
                 fail("Condition not met.");
             } else {
-                Try.run(() -> Thread.sleep(WAIT_MILLIS));
+                Try.run(() -> sleep(WAIT_MILLIS));
             }
         }
     }
@@ -315,7 +317,7 @@ public class FutureSuite {
 
         Future<String> future2 = Future.ofSupplier(service, () -> {
             try {
-                Thread.sleep(1000);
+                sleep(1000);
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -490,7 +492,7 @@ public class FutureSuite {
         final String[] thread2 = {""};
         Future<Integer> aFuture = Future.of(
                 () -> {
-                    Thread.sleep(1000);
+                    sleep(1000);
                     System.out.println("testRecover1"+Thread.currentThread().getName());
                     thread1[0] = Thread.currentThread().getName().toString();
                     return 2/0;
@@ -515,7 +517,7 @@ public class FutureSuite {
         final String[] thread2 = {""};
         Future<Integer> aFuture = Future.of(Executors.newSingleThreadExecutor(),
                 () -> {
-                    Thread.sleep(1000);
+                    sleep(1000);
                     System.out.println("testRecover1"+Thread.currentThread().getName());
                     thread1[0] = Thread.currentThread().getName().toString();
                     return 2/0;
@@ -661,7 +663,7 @@ public class FutureSuite {
         Future<Object> myFuture = Future.of(()-> {
             mypromise.success(15);
             try {
-                Thread.sleep(10000);
+                sleep(10000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -672,4 +674,61 @@ public class FutureSuite {
         assertEquals("Failure - Validate Future with Promise",new Integer(15),myFutureOne.get());
         assertFalse("Failure - Validate myFuture is not complete",myFuture.isCompleted());
     }
+
+    @Test
+    public void futureExercise(){
+        Future<Integer> f1 = Future.of(()->{
+            sleep(500);
+            return 1;
+        });
+        Future<Integer> f2 = Future.of(()->{
+            sleep(800);
+            return 2;
+        });
+        Future<Integer> f3 = Future.of(()->{
+            sleep(300);
+            return 2;
+        });
+        long inicio = System.nanoTime();
+
+        Future<Integer> res = f1.flatMap(a -> f2
+                .flatMap(b -> f3.
+                        flatMap(c -> Future.of(()->c+b+a)))).await();
+        System.out.println("Resultado de ejercicio: "+res.get());
+        long fin = System.nanoTime();
+
+        long elapsed = fin - inicio;
+        System.out.println("Tiempo en mili: "+elapsed*Math.pow(10,-6));
+    }
+
+    @Test
+    public void futureExerciseLazy(){
+        Lazy<Future<Integer>> f1 = Lazy.of(()->Future.of(()->{
+            sleep(500);
+            return 4;
+        }));
+
+        Lazy<Future<Integer>> f2 = Lazy.of(()->Future.of(()->{
+            sleep(800);
+            return 5;
+        }));
+        Lazy<Future<Integer>> f3 = Lazy.of(()->Future.of(()->{
+            sleep(300);
+            return 6;
+        }));
+        long inicio = System.nanoTime();
+
+
+        Future<Integer> res = f1.get()
+                .flatMap(a -> f2.get()
+                        .flatMap(b -> f3.get()
+                                .flatMap(c -> Future.of(()->a+b+c))));
+
+        System.out.println("Resultado de ejercicio: "+res.get());
+        long fin = System.nanoTime();
+        long elapsed = fin - inicio;
+        System.out.println("Tiempo en mili de lazy: "+elapsed*Math.pow(10,-6));
+    }
+
+
 }
