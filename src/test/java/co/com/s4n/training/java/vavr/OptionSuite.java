@@ -1,5 +1,6 @@
 package co.com.s4n.training.java.vavr;
 
+import co.com.s4n.training.java.ExerciseClass;
 import org.junit.Test;
 
 
@@ -15,6 +16,7 @@ import static io.vavr.API.*;
 import static io.vavr.Patterns.$None;
 import static io.vavr.Patterns.$Some;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -339,6 +341,47 @@ public class OptionSuite {
 
         assertEquals(res.getOrElse(666).intValue(),6);
 
+
+    }
+
+    @Test
+    public void testExercise(){
+
+        System.out.println("testExercise");
+        Option<List> r1 = ExerciseClass.addSize("andrea")
+                .flatMap(s -> ExerciseClass.concatString(s,"mario"))
+                .flatMap(ExerciseClass::removeFromSize)
+                .flatMap(ExerciseClass::stringToList);
+
+        String[] arr = {"a","n","d","r","e","a","-","s"};
+        List<String> listTest = Arrays.asList(arr);
+        //assertEquals(r1.getOrElse("None"),"andrea-seis");
+        //assertEquals("andrea-seis mario",r1.getOrElse("None"));
+        //assertEquals("andrea-s",r1.getOrElse("None"));
+
+
+        assertEquals(listTest,r1.getOrElse(new ArrayList()));
+
+    }
+
+    @Test
+    public void testExercise2(){
+
+        System.out.println("testExercise");
+        Option<List> r1 =
+                For(ExerciseClass.addSize("andrea"), s1 ->
+                For(ExerciseClass.concatString(s1,"mario"), s2 ->
+                For(ExerciseClass.removeFromSize(s2), s3 -> ExerciseClass.stringToList(s3)))).toOption();
+
+        String[] arr = {"a","n","d","r","e","a","-","s"};
+        List<String> listTest = Arrays.asList(arr);
+        //assertEquals(r1.getOrElse("None"),"andrea-seis");
+        //assertEquals("andrea-seis mario",r1.getOrElse("None"));
+        //assertEquals("andrea-s",r1.getOrElse("None"));
+
+
+
+        assertEquals(listTest,r1.getOrElse(new ArrayList()));
 
     }
 }
