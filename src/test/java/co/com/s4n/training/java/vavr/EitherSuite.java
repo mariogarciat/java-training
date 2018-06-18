@@ -10,6 +10,8 @@ import static io.vavr.API.Right;
 
 import java.util.function.Consumer;
 import java.io.Serializable;
+import java.util.function.Function;
+
 import static org.junit.Assert.assertArrayEquals;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
@@ -33,6 +35,11 @@ public class EitherSuite {
         assertTrue("Valide swap after in Either Right", myEitherR.swap().isLeft());
         assertTrue("Valide swap before in Either Left", myEitherL.isLeft());
         assertTrue("Valide swap after in Either Right", myEitherL.swap().isRight());
+        /*
+        assertFalse(myEitherR.isLeft());
+        assertFalse(myEitherR.swap().isRight());
+        assertFalse(myEitherL.isRight());
+        assertFalse(myEitherL.swap().isRight());*/
     }
 
     /**
@@ -51,6 +58,17 @@ public class EitherSuite {
 
         //El Either para operar el lado izquierdo se debe usar un mapLeft.
         assertEquals("Failure - Left Projection", Left(10), e2.mapLeft(it -> it + 5));
+    }
+
+    @Test
+    public void testMapToLeft(){
+        Either<Integer,Integer> e1 = Either.right(5);
+        Either<Integer,Integer> e2 = Either.left(5);
+
+        //El Either por defecto cuando se usa el map opera con el lado derecho.
+
+        //El Either para operar el lado izquierdo se debe usar un mapLeft.
+        assertNotEquals("Failure - Left Projection", Left(10), e2.map(it -> it + 5));
     }
 
     /**
@@ -94,6 +112,35 @@ public class EitherSuite {
 
     }
 
+    private Either<Integer, Integer> sumar(int a, int b){
+        System.out.println("sumando: " + a + "+" +  b);
+        Either<Integer,Integer> ret = Either.right(a+b);
+        return ret;
+    }
+
+    private Either<Integer, Integer> restar(int a, int b){
+        System.out.println("restando: " + a + "+" +  b);
+        return a-b>0 ? Either.right(a-b) : Either.left(666);
+    }
+
+    @Test
+    public void testOperations(){
+        Either<Integer,Integer> either = sumar(1,1)
+                .flatMap(a -> sumar(a,3).flatMap(b -> restar(b,2)
+                        .flatMap(c -> sumar(c,1))));
+
+        assertEquals(Either.right(4),either);
+    }
+
+    @Test
+    public void testOperationsLeft(){
+        Either<Integer,Integer> either = sumar(1,1)
+                .flatMap(a -> sumar(a,3).flatMap(b -> restar(b,6)
+                        .flatMap(c -> sumar(c,1))));
+
+        assertEquals(Either.left(666),either);
+    }
+
     /**
      * Un Either puede ser filtrado, y en el predicado se pone la condicion
      */
@@ -104,6 +151,16 @@ public class EitherSuite {
 
         assertEquals("value is even",
                 None(),
+                value.filter(it -> it % 2 == 0));
+    }
+
+    @Test
+    public void testEitherFilterSome() {
+
+        Either<String,Integer> value = Either.right(8);
+
+        assertEquals("value is even",
+                Some(Right(8)),
                 value.filter(it -> it % 2 == 0));
     }
 
@@ -183,6 +240,27 @@ public class EitherSuite {
         myEitherL.peekLeft(myConsumer);
         assertEquals("Validete Either with peek","foo", valor[0]);
     }
+
+
+   public class BiPeek<A,B>{
+        public Either<A,B> biPeek(Consumer<A> pl, Consumer<B> pr, Either<A,B> e){
+            return e.isRight() ? e.peek(pr) : e.peekLeft(pl);
+        }
+   }
+
+   @Test
+   public void testMyPeek(){
+
+        Either<String,Integer> left = Either.left("1");
+        BiPeek<String,Integer> bk = new BiPeek<String, Integer>();
+        final String[] r = {""};
+        Consumer<String> cl = i -> {r[0] = "left peeked";};
+
+        Consumer<Integer> cr = i -> {r[0] = "left peeked";};
+
+       Either<String, Integer> exe = bk.biPeek(cl, cr, left);
+       assertEquals(r[0],"left peeked");
+   }
 
     /**
      * Uso de pattern matching para capturar un Either.Left
