@@ -158,6 +158,23 @@ public class ValidationSuite
         // Cambialo para que verifiques con fold! :D
     }
 
+    @Test
+    public void testCombineWithAnInvalidWithFold(){
+
+        Validation<Error,String> valid = Validation.valid("Lets");
+        Validation<Error,String> valid2 = Validation.valid("Go!");
+        Validation<Error, String> invalid = Validation.invalid(new Error("Stop!"));
+
+        Validation<Seq<Error>, String> finalValidation = Validation.combine(valid, invalid , valid2).ap((v1,v2,v3) -> v1 + v2 + v3);
+
+        //finalValidation.fold(List.of(valid,valid2,invalid), (x,y) -> )   terminar
+        assertEquals("Failure - Combine with an invalid Validation didn't return the error",
+                "Stop!",
+                finalValidation.getError().get(0).getMessage());
+
+        // Cambialo para que verifiques con fold! :D
+    }
+
     /**
      * Combinar multiples validations todas validas
      */
@@ -235,6 +252,26 @@ public class ValidationSuite
                 result8.ap(TestValidation::new).toString());
     }
 
+    @Test
+    public void testBuilder7() {
+
+        Validation<String, String> v1 = Validation.valid("John Doe");
+        Validation<String, Integer> v2 = Validation.valid(39);
+        Validation<String, Option<String>> v3 = Validation.valid(Option.of("address"));
+
+        Validation<String, String> v4 = Validation.valid("111-111-1111");
+        Validation<String, String> v5 = Validation.valid("alt1");
+        Validation<String, String> v6 = Validation.valid("alt2");
+        Validation<String, String> v7 = Validation.valid("alt3");
+
+        Validation.Builder7<String, String, Integer, Option<String>, String, String, String, String> result8 =
+                Validation.combine(v1,v2,v3,v4,v5,v6,v7);
+
+        /*assertEquals("Failure - ",
+                "Valid(John Doe,39,address,111-111-1111,alt1,alt2,alt3,alt4)",
+                result8.ap(TestValidation::new).toString());*/
+    }
+
     /**
      *  Me permite recorrer una coleccion de Validation y operarlos
      */
@@ -255,6 +292,42 @@ public class ValidationSuite
         validation.forEach(consumer);
         assertEquals("Failure- Was not operated",
                 Arrays.asList("Operacion 0","Operacion 1","Operacion 2"),msg);
+    }
+
+    class Class1 {
+        int valid = 0;
+        int invalid = 0;
+
+        public Validation<Error,String> validate(Validation<Error,String> val){
+            if(val.isValid()){
+                valid++;
+            }else {
+                invalid++;
+            }
+            return val;
+        }
+    }
+
+    @Test
+    public void testValidatorForEach2() {
+        Validation<Error,String> valid1 = Validation.valid("Válido 1");
+        Validation<Error,String> valid2 = Validation.valid("Válido 2");
+        Validation<Error, String> invalid1 = Validation.invalid(new Error("Stop 1"));
+        Validation<Error,String> valid3 = Validation.valid("Válido 3");
+        Validation<Error, String> invalid2 = Validation.invalid(new Error("Stop 1"));
+
+
+        Class1 class1 = new Class1();
+
+
+        Validation<Seq<Error>, String> res = Validation.combine(class1.validate(valid1), class1.validate(invalid1), class1.validate(valid2),
+                class1.validate(invalid2), class1.validate(valid3)).ap((v1, i1, v2, i2, v3) -> v1 + i1 + v2 + i2 + v3);
+
+        assertEquals(3,class1.valid);
+        assertEquals(2,class1.invalid);
+
+
+
     }
 
     /**
